@@ -34,9 +34,7 @@ llm = ChatOpenAI(
 agent = create_agent(llm, tools=[search_emails, read_email])
 
 
-# =====================================================
 # LONG-TERM MEMORY: facts stored in a PostgreSQL table
-# =====================================================
 def connect_facts():
     conn = psycopg.connect(DB_URI)
     conn.execute(
@@ -88,13 +86,9 @@ def forget_fact(fact_id):
         return f"Memory error: {str(e)[:150]}"
     return "Deleted." if deleted == 1 else f"No fact with id {fact_id}."
 
-
-# =====================================================
 # SHORT-TERM MEMORY: chat state saved by the checkpointer
-# =====================================================
 class ChatState(MessagesState):
     summary: str
-
 
 def explain_error(e):
     text = str(e)
@@ -107,7 +101,6 @@ def explain_error(e):
     if "ecursion" in text:
         return "The agent took too many steps. Try a simpler question."
     return f"Error: {text[:300]}"
-
 
 def chat_node(state: ChatState):
     """Answers ONE question. Returns only the final answer, never tool calls or email bodies."""
@@ -181,7 +174,6 @@ def summarize_conversation(state: ChatState):
 def should_summarize(state: ChatState):
     return "summarize" if len(state["messages"]) > SUMMARIZE_AFTER else END
 
-
 def build_graph(checkpointer):
     builder = StateGraph(ChatState)
     builder.add_node("chat", chat_node)
@@ -191,10 +183,7 @@ def build_graph(checkpointer):
     builder.add_edge("summarize", END)
     return builder.compile(checkpointer=checkpointer)
 
-
-# =====================================================
 # CHAT LOOP
-# =====================================================
 def main():
     try:
         with PostgresSaver.from_conn_string(DB_URI) as checkpointer:
